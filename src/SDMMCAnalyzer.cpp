@@ -138,6 +138,7 @@ int SDMMCAnalyzer::TryReadCommand()
 
 		frame.mStartingSampleInclusive = mClock->GetSampleNumber();
 		frame.mData1 = 0;
+		frame.mData2 = 0;
 		frame.mType = SDMMCAnalyzerResults::FRAMETYPE_CRC;
 
 		for (int i = 0; i < 7; i++) {

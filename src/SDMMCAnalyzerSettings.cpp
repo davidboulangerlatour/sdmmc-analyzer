@@ -38,6 +38,11 @@ SDMMCAnalyzerSettings::SDMMCAnalyzerSettings()
 	AddInterface(mProtocolInterface.get());
 	AddInterface(mSampleEdgeInterface.get());
 
+	//AddExportOption( 0, "Export as text/csv file", "text (*.txt);;csv (*.csv)" );
+	AddExportOption( 0, "Export as text/csv file" );
+	AddExportExtension( 0, "text", "txt" );
+	AddExportExtension( 0, "csv", "csv" );
+
 	ClearChannels();
 	AddChannel(mClockChannel, "Clock", false);
 	AddChannel(mCommandChannel, "Command", false);
@@ -107,8 +112,8 @@ const char *SDMMCAnalyzerSettings::SaveSettings()
 	SimpleArchive archive;
 
 	archive << mClockChannel;
-	archive << mData0Channel;
 	archive << mCommandChannel;
+	archive << mData0Channel;
 	archive << mProtocol;
 	archive << mSampleEdge;
 

@@ -2,6 +2,7 @@
 #include "SDMMCAnalyzer.h"
 #include "SDMMCAnalyzerSettings.h"
 #include "SDMMCHelpers.h"
+#include <sstream>
 
 SDMMCAnalyzerResults::SDMMCAnalyzerResults(SDMMCAnalyzer* analyzer, SDMMCAnalyzerSettings* settings)
 :	AnalyzerResults(),
@@ -231,7 +232,64 @@ void SDMMCAnalyzerResults::GenerateBubbleText(U64 frame_index, Channel& channel,
 void SDMMCAnalyzerResults::GenerateExportFile(const char* file, DisplayBase display_base, U32 export_type_user_id)
 {
 	ClearResultStrings();
-	AddResultString("not supported");
+
+	std::stringstream ss;
+	void* f = AnalyzerHelpers::StartFile( file );
+
+	U64 trigger_sample = mAnalyzer->GetTriggerSample();
+	U32 sample_rate = mAnalyzer->GetSampleRate();
+
+	ss << "Time [s],Type,D1,D2" << std::endl;
+
+	U64 num_frames = GetNumFrames();
+	for( U32 i=0; i < num_frames; i++ )
+	{
+		Frame frame = GetFrame( i );
+
+		char time_str[128];
+		AnalyzerHelpers::GetTimeString( frame.mStartingSampleInclusive, trigger_sample, sample_rate, time_str, 128 );
+
+		std::string type_str;
+		switch (frame.mType)
+		{
+			case FRAMETYPE_CRC:
+				type_str = "CRC";
+				break;
+			case FRAMETYPE_HEADER:
+				type_str = "HEADER";
+				break;
+			case FRAMETYPE_RESPONSE:
+				type_str = "RESP";
+				break;
+			case FRAMETYPE_COMMAND:
+				type_str = "CMD";
+				break;
+			default:
+				type_str = "INVALID";
+		}
+
+		char d1_str[128] = "";
+		AnalyzerHelpers::GetNumberString( frame.mData1, display_base, 8, d1_str, 128 );
+
+		char d2_str[128] = "";
+		if (frame.mType == 	FRAMETYPE_COMMAND)
+		{
+			AnalyzerHelpers::GetNumberString( frame.mData2, display_base, 8, d2_str, 128 );
+		}
+
+		ss << time_str << "," << type_str << "," << d1_str << "," << d2_str << std::endl;
+
+		AnalyzerHelpers::AppendToFile( (U8*)ss.str().c_str(), ss.str().length(), f );
+		ss.str( std::string() );
+
+		if( UpdateExportProgressAndCheckForCancel( i, num_frames ) == true )
+		{
+			AnalyzerHelpers::EndFile( f );
+			return;
+		}
+	}
+
+	AnalyzerHelpers::EndFile( f );
 }
 
 void SDMMCAnalyzerResults::GenerateFrameTabularText(U64 frame_index, DisplayBase display_base)
